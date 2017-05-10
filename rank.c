@@ -12,19 +12,19 @@ int str_to_card(char *str, card_t *card) {
 
     unsigned char rank_num;
     switch (rank) {
-        case "A":
+        case 'A':
             rank_num = A_RANK;
             break;
-        case "K":
+        case 'K':
             rank_num = K_RANK;
             break;
-        case "Q":
+        case 'Q':
             rank_num = Q_RANK;
             break;
-        case "J":
+        case 'J':
             rank_num = J_RANK;
             break;
-        case "T":
+        case 'T':
             rank_num = T_RANK;
         default:
             rank_num = rank - ASCII_NUM_OFFSET;
@@ -33,16 +33,16 @@ int str_to_card(char *str, card_t *card) {
 
     unsigned char suit_num;
     switch (suit) {
-        case "d":
+        case 'd':
             suit_num = DIAMOND;
             break;
-        case "h":
+        case 'h':
             suit_num = HEART;
             break;
-        case "c":
+        case 'c':
             suit_num = CLUB;
             break;
-        case "s":
+        case 's':
             suit_num = SPADE;
             break;
         default:
