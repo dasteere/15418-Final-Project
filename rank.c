@@ -29,7 +29,7 @@ int str_to_card(char *str, card_t *card) {
         default:
             rank_num = rank - ASCII_NUM_OFFSET;
     } 
-    if (rank_num >= NUM_SUITS) return -1;
+    if (rank_num >= NUM_RANKS) return -1;
 
     unsigned char suit_num;
     switch (suit) {
