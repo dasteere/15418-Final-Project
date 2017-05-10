@@ -1,3 +1,10 @@
+#ifndef _RANK_H
+#define _RANK_H
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #define DIAMOND (1 << 0)
 #define HEART   (1 << 1)
 #define SPADE   (1 << 2)
@@ -46,3 +53,9 @@ int rank_of(card_t *board, card_t *hand);
 void int_to_hand(int hand, char *buf);
 
 card_t str_to_card(char rank, char suit);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* _RANK_H */

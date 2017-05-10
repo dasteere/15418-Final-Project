@@ -1,7 +1,9 @@
 #include <cuda_runtime.h>
 #include <driver_functions.h>
 
+extern "C" {
 #include "cudaRiver.h"
+}
 
 /*struct GlobalConstants {
     //must be in cuda
@@ -75,6 +77,7 @@ __global__ void kernel_calculateValue(int handsPerThread,
     }
 }
 
+extern "C"
 GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
         int oopSize, card_t *ipRange, int ipSize, int potSize, int betSize) {
     GlobalConstants *params = (GlobalConstants *) malloc(sizeof(GlobalConstants));
@@ -109,6 +112,7 @@ void addOne(char *curStrategy, GlobalConstants *params) {
 }
 
 //calculates the best strategy for the oop player along with the strategies value
+extern "C"
 void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
     cudaMemcpyToSymbol(cuConsts, params, sizeof(GlobalConstants));
 

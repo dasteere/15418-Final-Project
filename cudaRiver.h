@@ -1,3 +1,6 @@
+#ifndef _CUDA_RIVER_H
+#define _CUDA_RIVER_H
+
 #include "rank.h"
 
 typedef struct GlobalConstants {
@@ -18,3 +21,5 @@ GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
         int oopSize, card_t*ipRange, int ipSize, int potSize, int betSize);
 
 void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params);
+
+#endif /* _CUDA_RIVER_H */
