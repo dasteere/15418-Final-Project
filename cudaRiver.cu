@@ -1,9 +1,9 @@
 #include <cuda_runtime.h>
 #include <driver_functions.h>
 
-#include "rank.h"
+#include "cudaRiver.h"
 
-struct GlobalConstants {
+/*struct GlobalConstants {
     //must be in cuda
     int *oopRanks;
     int oopSize;
@@ -14,7 +14,7 @@ struct GlobalConstants {
     int potSize;
     int betSize;
     int afterBetSize;
-};
+};*/
 
 __constant__ GlobalConstants cuConsts;
 
@@ -75,7 +75,7 @@ __global__ void kernel_calculateValue(int handsPerThread,
     }
 }
 
-GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
+extern "C" GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
         int oopSize, card_t *ipRange, int ipSize, int potSize, int betSize) {
     GlobalConstants *params = (GlobalConstants *) malloc(sizeof(GlobalConstants));
     int *oopRanks = (int *) malloc(oopSize * sizeof(int));

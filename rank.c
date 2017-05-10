@@ -55,7 +55,7 @@ void int_to_hand(int hand, char *buf) {
             n += sprintf(buf + n, "Unrecognized");
             num_cards = 0;
     }
-    
+
     for (int i = 0; i < num_cards; i++) {
         unsigned char rank = (unsigned char)hand & 0xF;
         n += sprintf(buf + n, "\nCard %d: Rank %d", i, rank);
@@ -64,7 +64,7 @@ void int_to_hand(int hand, char *buf) {
     }
 }
 
-int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
+int rank_of(card_t *board, card_t *hand) {
     char rank_suits[NUM_RANKS];
     char ranks[NUM_RANKS];
     char suits[MAX_SUIT_VAL];
@@ -113,7 +113,7 @@ int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
             if (rank_suits[j] & suit) {
                 num_consec++;
                 if (num_consec == CARDS_TO_STRAIGHT) {
-                    straight_flush = j; 
+                    straight_flush = j;
                 }
             } else {
                 num_consec = 0;
@@ -131,7 +131,7 @@ int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
                     break;
                 }
             }
-        } 
+        }
     }
 
     num_consec = 0;
@@ -166,11 +166,11 @@ int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
     /* Add kicker to two pair, quads, trips, high card */
     for (int i = NUM_RANKS - 1; i >= 0; i--) {
         if (ranks[i] == 1) {
-            if (num_kickers < QUADS_KICKERS && quads >= 0) 
-                quads = (quads << RANK_SHIFT) | i; 
-            if (num_kickers < TRIPS_KICKERS && trips >= 0) 
+            if (num_kickers < QUADS_KICKERS && quads >= 0)
+                quads = (quads << RANK_SHIFT) | i;
+            if (num_kickers < TRIPS_KICKERS && trips >= 0)
                 trips = (trips << RANK_SHIFT) | i;
-            if (num_kickers < TWO_PAIR_KICKERS && two_pair >= 0) 
+            if (num_kickers < TWO_PAIR_KICKERS && two_pair >= 0)
                 two_pair = (two_pair << RANK_SHIFT) | i;
             if (num_kickers < HIGH_CARD_KICKERS)
                 high_card = (high_card << RANK_SHIFT) | i;
@@ -191,6 +191,11 @@ int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
     return hand_to_int(HIGH_CARD, high_card);
 }
 
+card_t str_to_card(char rank, char suit) {
+    card_t c = { .suit = 2, .rank = 5 };
+    return c;
+}
+/*
 int main() {
     card_t board[BOARD_SIZE];
     card_t hand[HAND_SIZE];
@@ -243,5 +248,5 @@ int main() {
     for (int i = 0; i < 2000; i++) {
         printf("%d\n", rank_of(board, hand));
     }*/
-}
+//}
 
