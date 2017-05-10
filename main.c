@@ -48,8 +48,8 @@ int main() {
     GlobalConstants *params = calcGlobalConsts(board, oopRange, oopSize, ipRange, ipSize, potSize, betSize);
 
     char *bestOopStrategy = (char *) malloc(oopSize * sizeof(char));
-    int *stratVal;
-    calcMaxStrategy(bestOopStrategy, stratVal, params);
+    int stratVal;
+    calcMaxStrategy(bestOopStrategy, &stratVal, params);
 
-    printf("OOP best strategy has a value of %d", *stratVal);
+    printf("OOP best strategy has a value of %d", stratVal);
 }

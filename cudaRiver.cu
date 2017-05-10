@@ -1,6 +1,8 @@
 #include <cuda_runtime.h>
 #include <driver_functions.h>
 #include <stdio.h>
+#include <limits.h>
+#include <assert.h>
 
 
 extern "C" {
@@ -64,7 +66,7 @@ __global__ void kernel_calculateValue(int handsPerThread,
                 check += showPot;
                 bet += cuConsts.potSize;
             case BET:
-                call += cuConsts.afterBetSize;
+                call += showBet;
                 fold -= cuConsts.potSize;
             }
         }
@@ -154,21 +156,27 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
 
     int handsPerThread = params->ipSize / numThreads;
     char *minStrategy = (char *) malloc(params->oopSize * sizeof(char));
-    int minFound = 1 << (sizeof(int) - 2);
+    int minFound = INT_MAX;
 
     //number of kernel invokations needed
     for (int i = 0; i < totalStrategies / NUM_STRATEGIES_PER_ITERATION; i++) {
         //strategies per kernel call
         for (int j = 0; j < NUM_STRATEGIES_PER_ITERATION; j++) {
             addOne(curStrategy, params);
-            cudaMemcpy(oopStrategies[j], curStrategy,
-                    params->oopSize * sizeof(char), cudaMemcpyHostToDevice);
+            if (cudaMemcpy(oopStrategies[j], curStrategy, params->oopSize *
+                        sizeof(char), cudaMemcpyHostToDevice) != cudaSuccess) {
+                printf("CudaMemcpy Failed\n");
+                assert(0);
+            }
         }
-
+        cudaMemset(cudaOutput, 0, NUM_STRATEGIES_PER_ITERATION * sizeof(int));
         kernel_calculateValue<<<NUM_STRATEGIES_PER_ITERATION, numThreads>>>
             (handsPerThread, cudaOopStrategies, cudaOutput);
-        cudaMemcpy(output, cudaOutput,
-                NUM_STRATEGIES_PER_ITERATION * sizeof(int), cudaMemcpyDeviceToHost);
+        if (cudaMemcpy(output, cudaOutput, NUM_STRATEGIES_PER_ITERATION * sizeof(int),
+                    cudaMemcpyDeviceToHost) != cudaSuccess) {
+            printf("CudaMemcpy Failed\n");
+            assert(0);
+        }
 
         //need to synchronize here
         int minIdx = -1;
@@ -179,8 +187,12 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
                 minFound = output[k];
             }
         }
-        cudaMemcpy(bestStrat, oopStrategies[minIdx],
-                params->oopSize * sizeof(char), cudaMemcpyDeviceToHost);
+        if (minIdx >= 0 && cudaMemcpy(bestStrat, oopStrategies[minIdx],
+                    params->oopSize * sizeof(char),
+                    cudaMemcpyDeviceToHost) != cudaSuccess) {
+            printf("CudaMemcpy Failed\n");
+            assert(0);
+        }
     }
     *stratVal = minFound;
 }
