@@ -129,32 +129,47 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
     cudaMemcpyToSymbol(cuConsts, params, sizeof(GlobalConstants));
 
 
-
+    char **oopStrategies =
+        (char **) malloc(NUM_STRATEGIES_PER_ITERATION * sizeof(char *));
     cudaMalloc(&cudaOopStrategies, NUM_STRATEGIES_PER_ITERATION * sizeof(char *));
+
     for (int i = 0; i < NUM_STRATEGIES_PER_ITERATION; i++) {
-        cudaMalloc(&cudaOopStrategies[i], params->oopSize * sizeof(char));
+        cudaMalloc(&oopStrategies[i], params->oopSize * sizeof(char));
     }
+    cudaMemcpy(cudaOopStrategies, oopStrategies,
+            NUM_STRATEGIES_PER_ITERATION * sizeof(char*), cudaMemcpyHostToDevice);
+
     int totalStrategies = 1;
     for (int i = 0; i < params->oopSize; i++) {
         totalStrategies *= OOP_MOVES;
     }
+
     output = (int *) malloc(NUM_STRATEGIES_PER_ITERATION * sizeof(int));
+    cudaMalloc(&cudaOutput, NUM_STRATEGIES_PER_ITERATION * sizeof(int));
+
     char *curStrategy = (char *) malloc(params->oopSize * sizeof(char));
     memset(curStrategy, 0, params->oopSize * sizeof(char));
-    cudaMalloc(&cudaOutput, NUM_STRATEGIES_PER_ITERATION * sizeof(int));
+
     int numThreads = 64 > params->ipSize ? params->ipSize : 64;
+
     int handsPerThread = params->ipSize / numThreads;
     char *minStrategy = (char *) malloc(params->oopSize * sizeof(char));
     int minFound = 1 << (sizeof(int) - 2);
+
     //number of kernel invokations needed
     for (int i = 0; i < totalStrategies / NUM_STRATEGIES_PER_ITERATION; i++) {
         //strategies per kernel call
         for (int j = 0; j < NUM_STRATEGIES_PER_ITERATION; j++) {
             addOne(curStrategy, params);
-            cudaMemcpy(cudaOopStrategies[j], curStrategy, params->oopSize * sizeof(char), cudaMemcpyHostToDevice);
+            cudaMemcpy(cudaOopStrategies[j], curStrategy,
+                    params->oopSize * sizeof(char), cudaMemcpyHostToDevice);
         }
-        kernel_calculateValue<<<NUM_STRATEGIES_PER_ITERATION, numThreads>>>(handsPerThread, cudaOopStrategies, cudaOutput);
-        cudaMemcpy(output, cudaOutput, NUM_STRATEGIES_PER_ITERATION * sizeof(int), cudaMemcpyDeviceToHost);
+
+        kernel_calculateValue<<<NUM_STRATEGIES_PER_ITERATION, numThreads>>>
+            (handsPerThread, cudaOopStrategies, cudaOutput);
+        cudaMemcpy(output, cudaOutput,
+                NUM_STRATEGIES_PER_ITERATION * sizeof(int), cudaMemcpyDeviceToHost);
+
         //need to synchronize here
         int minIdx = -1;
         //output is the value to the ip strategy, so find the minimum
@@ -164,7 +179,8 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
                 minFound = output[k];
             }
         }
-        cudaMemcpy(bestStrat, cudaOopStrategies[minIdx], params->oopSize * sizeof(char), cudaMemcpyDeviceToHost);
+        cudaMemcpy(bestStrat, cudaOopStrategies[minIdx],
+                params->oopSize * sizeof(char), cudaMemcpyDeviceToHost);
     }
     *stratVal = minFound;
 }
