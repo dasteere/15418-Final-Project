@@ -14,7 +14,7 @@ typedef struct GlobalConstants {
 } GlobalConstants;
 
 
-extern GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
+GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
         int oopSize, card_t*ipRange, int ipSize, int potSize, int betSize);
 
 void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params);

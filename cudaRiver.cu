@@ -75,7 +75,7 @@ __global__ void kernel_calculateValue(int handsPerThread,
     }
 }
 
-extern "C" GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
+GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
         int oopSize, card_t *ipRange, int ipSize, int potSize, int betSize) {
     GlobalConstants *params = (GlobalConstants *) malloc(sizeof(GlobalConstants));
     int *oopRanks = (int *) malloc(oopSize * sizeof(int));
