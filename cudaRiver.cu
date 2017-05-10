@@ -48,7 +48,7 @@ __global__ void kernel_calculateValue(int handsPerThread, int *output) {
         for (int j = 0; j < oopSize; j++) {
             int oopRank = oopRange[j];
             int oopMove = strategy[j];
-            int showdown = ipRank > oopRank ? 1 : 0;
+            int showdown = ipRank > oopRank ? 1 : -1;
             showPot = showdown * potSize;
             showBet = showdown * afterBetSize;
             switch (oopMove) {
@@ -59,7 +59,7 @@ __global__ void kernel_calculateValue(int handsPerThread, int *output) {
                 check += showPot;
                 bet += potSize;
             case BET:
-                call += showdown * afterBetSize;
+                call += afterBetSize;
                 fold -= potSize;
             }
         }
