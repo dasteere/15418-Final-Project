@@ -6,29 +6,94 @@ int hand_to_int(enum hand_type t, int qual) {
     return (1 << (QUAL_BITS  + t)) | qual;
 }
 
+void int_to_hand(int hand, char *buf) {
+    int type_bits = hand >> QUAL_BITS;
+    enum hand_type type = 0;
+
+    while (type_bits != 1) {
+        type_bits >>= 1;
+        type++;
+    }
+
+    int num_cards;
+    int n = 0;
+
+    switch (type) {
+        case HIGH_CARD:
+            n += sprintf(buf + n, "High card: ");
+            num_cards = 5;
+            break;
+        case PAIR:
+            n += sprintf(buf + n, "Pair: ");
+            num_cards = 4;
+            break;
+        case TWO_PAIR:
+            n += sprintf(buf + n, "Two pair: ");
+            num_cards = 3;
+            break;
+        case TRIPS:
+            n += sprintf(buf + n, "Trips: ");
+            num_cards = 3;
+            break;
+        case STRAIGHT:
+            n += sprintf(buf + n, "Straight: ");
+            num_cards = 1;
+            break;
+        case FLUSH:
+            n += sprintf(buf + n, "Flush: ");
+            num_cards = 1;
+            break;
+        case QUADS:
+            n += sprintf(buf + n, "Quads: ");
+            num_cards = 2;
+            break;
+        case STRAIGHT_FLUSH:
+            n += sprintf(buf + n, "Straight flush: ");
+            num_cards = 1;
+            break;
+        default:
+            n += sprintf(buf + n, "Unrecognized");
+            num_cards = 0;
+    }
+    
+    for (int i = 0; i < num_cards; i++) {
+        unsigned char rank = (unsigned char)hand & 0xF;
+        n += sprintf(buf + n, "\nCard %d: Rank %d", i, rank);
+
+        hand >>= RANK_SHIFT;
+    }
+}
+
 int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
     char rank_suits[NUM_RANKS];
     char ranks[NUM_RANKS];
     char suits[MAX_SUIT_VAL];
 
+    for (int i = 0; i < NUM_RANKS; i++) {
+        rank_suits[i] = 0;
+        ranks[i] = 0;
+    }
+    for (int i = 0; i < MAX_SUIT_VAL; i++) {
+        suits[i] = 0;
+    }
+
     for (int i = 0; i < BOARD_SIZE; i++) {
-        char suit = board[i].suit;
-        char rank = board[i].rank;
+        unsigned char suit = board[i].suit;
+        unsigned char rank = board[i].rank;
 
         rank_suits[rank] |= suit;
         ranks[rank]++;
         suits[suit]++;
     }
     for (int i = 0; i < HAND_SIZE; i++) {
-        char suit = board[i].suit;
-        char rank = board[i].rank;
+        unsigned char suit = hand[i].suit;
+        unsigned char rank = hand[i].rank;
 
         rank_suits[rank] |= suit;
         ranks[rank]++;
         suits[suit]++;
     }
 
-    char last_rank = 0;
     char num_consec = 0;
 
     int straight_flush = -1;
@@ -42,7 +107,7 @@ int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
 
     /* Check for straight flush */
     for (int i = 0; i < NUM_SUITS; i++) {
-        char suit = 1 << i;
+        unsigned char suit = 1 << i;
         num_consec = 0;
         for (int j = NUM_RANKS - 1; j >= 0; j--) {
             if (rank_suits[j] & suit) {
@@ -57,7 +122,7 @@ int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
     }
 
     for (int i = 0; i < NUM_SUITS; i++) {
-        char suit = 1 << i;
+        unsigned char suit = 1 << i;
         /* Find highest rank in flush */
         if (suits[suit] == CARDS_TO_FLUSH) {
             for (int j = NUM_RANKS - 1; j >= 0; j++) {
@@ -96,15 +161,22 @@ int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
         }
     }
 
-    int kicker;
-    /* Add kicker to two pair, quads, trips */
+    int num_kickers = 0;
+    int high_card = 0;
+    /* Add kicker to two pair, quads, trips, high card */
     for (int i = NUM_RANKS - 1; i >= 0; i--) {
         if (ranks[i] == 1) {
-            if (quads >= 0) quads = (quads << RANK_SHIFT) | i; 
-            if (trips >= 0) trips = (trips << RANK_SHIFT) | i;
-            if (two_pair >= 0) two_pair = (two_pair << RANK_SHIFT) | i;
-            kicker = i;
-            break;
+            if (num_kickers < QUADS_KICKERS && quads >= 0) 
+                quads = (quads << RANK_SHIFT) | i; 
+            if (num_kickers < TRIPS_KICKERS && trips >= 0) 
+                trips = (trips << RANK_SHIFT) | i;
+            if (num_kickers < TWO_PAIR_KICKERS && two_pair >= 0) 
+                two_pair = (two_pair << RANK_SHIFT) | i;
+            if (num_kickers < HIGH_CARD_KICKERS)
+                high_card = (high_card << RANK_SHIFT) | i;
+
+            num_kickers++;
+            if (num_kickers >= HIGH_CARD_KICKERS) break;
         }
     }
 
@@ -116,10 +188,60 @@ int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]) {
     if (trips >= 0) return hand_to_int(TRIPS, trips);
     if (two_pair >= 0) return hand_to_int(TWO_PAIR, two_pair);
     if (pair >= 0) return hand_to_int(PAIR, pair);
-    return hand_to_int(HIGH_CARD, kicker);
+    return hand_to_int(HIGH_CARD, high_card);
 }
 
 int main() {
-    printf("%d", sizeof(card_t));
+    card_t board[BOARD_SIZE];
+    card_t hand[HAND_SIZE];
+    char buf[256];
+
+    card_t card1 = { .suit = 1, .rank = 5 };
+    card_t card2 = { .suit = 2, .rank = 7 };
+    card_t card3 = { .suit = 4, .rank = 8 };
+    card_t card4 = { .suit = 2, .rank = 10 };
+    card_t card5 = { .suit = 1, .rank = 11 };
+
+    card_t hand1 = { .suit = 1, .rank = 5 };
+    card_t hand2 = { .suit = 2, .rank = 7 };
+
+    card_t hand3 = { .suit = 2, .rank = 8 };
+    card_t hand4 = { .suit = 2, .rank = 7 };
+
+    board[0] = card1;
+    board[1] = card2;
+    board[2] = card3;
+    board[3] = card4;
+    board[4] = card5;
+
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        printf("suit %d rank %d\n", board[i].suit, board[i].rank);
+    }
+
+    hand[0] = hand1;
+    hand[1] = hand2;
+    int rank = rank_of(board, hand);
+
+    printf("rank: %x\n", rank);
+    int_to_hand(rank, buf);
+    printf("%s\n", buf);
+
+
+
+    hand[0] = hand3;
+    hand[1] = hand4;
+    rank = rank_of(board, hand);
+
+    printf("rank: %x\n", rank);
+    int_to_hand(rank, buf);
+    printf("%s\n", buf);
+
+    /*
+    for (int i = 0; i < BOARD_SIZE; i++) board[i] = card;
+    for (int i = 0; i < HAND_SIZE; i++) hand[i] = card;
+
+    for (int i = 0; i < 2000; i++) {
+        printf("%d\n", rank_of(board, hand));
+    }*/
 }
 
