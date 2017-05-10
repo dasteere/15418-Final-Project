@@ -239,10 +239,6 @@ int rank_of(card_t *board, card_t *hand) {
     return hand_to_int(HIGH_CARD, high_card);
 }
 
-card_t str_to_card(char rank, char suit) {
-    card_t c = { .suit = 2, .rank = 5 };
-    return c;
-}
 /*
 int main() {
     card_t board[BOARD_SIZE];
