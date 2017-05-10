@@ -1,5 +1,7 @@
 #include <cuda_runtime.h>
 #include <driver_functions.h>
+#include <stdio.h>
+
 
 extern "C" {
 #include "cudaRiver.h"
@@ -83,11 +85,21 @@ GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
     GlobalConstants *params = (GlobalConstants *) malloc(sizeof(GlobalConstants));
     int *oopRanks = (int *) malloc(oopSize * sizeof(int));
     int *ipRanks = (int *) malloc(ipSize * sizeof(int));
+    char buffer[64];
+    char handBuffer[6];
     for (int i = 0; i < oopSize; i++) {
         oopRanks[i] = rank_of(board, oopRange + (i*2));
+        int_to_hand(oopRanks[i], buffer);
+        card_to_str(oopRange[i*2], handBuffer);
+        card_to_str(oopRange[i*2+1], handBuffer + 3);
+        //printf("Hand: %s%s, Score: %d, Rank: %s\n", handBuffer, handBuffer + 3, oopRanks[i], buffer);
     }
     for (int i = 0; i < ipSize; i++) {
         ipRanks[i] = rank_of(board, ipRange + (i*2));
+        int_to_hand(ipRanks[i], buffer);
+        card_to_str(ipRange[i*2], handBuffer);
+        card_to_str(ipRange[i*2+1], handBuffer + 3);
+        //printf("Hand: %s%s, Score: %d, Rank: %s\n", handBuffer, handBuffer + 3, ipRanks[i], buffer);
     }
     cudaMalloc(&(params->oopRanks), sizeof(int) * oopSize);
     cudaMalloc(&(params->ipRanks), sizeof(int) * ipSize);
@@ -100,7 +112,7 @@ GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
     params->potSize = potSize;
     params->betSize = betSize;
     params->afterBetSize = potSize + betSize;
-
+    //printf("Done\n");
     return params;
 }
 

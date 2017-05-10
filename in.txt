@@ -1,6 +1,6 @@
 10 12 200 50
 2h,9s,As,5c,Ks,
-OOP RANGE
+---OOP RANGE---
 Ac,Ts,
 Ac,Th,
 Ac,Ad,
@@ -11,14 +11,14 @@ Qs,Qc,
 2h,3h,
 Ah,4h,
 5s,5h,
-IP RANGE
+---IP RANGE---
 Tc,Jc,
 Ac,Ad,
 Qh,Qs,
 Qs,Qc,
 2h,3d,
 5h,2d,
-9h,1d,
+9h,3d,
 9h,9d,
 9c,9h,
 Td,Th,
