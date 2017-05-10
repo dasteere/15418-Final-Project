@@ -60,6 +60,8 @@ int rank_of(card_t *board, card_t *hand);
 
 void int_to_hand(int hand, char *buf);
 
+void card_to_str(card_t card, char *buf);
+
 int str_to_card(char *str, card_t *card);
 
 #if defined(__cplusplus)

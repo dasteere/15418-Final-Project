@@ -55,6 +55,51 @@ int str_to_card(char *str, card_t *card) {
     return 0;
 }
 
+void card_to_str(card_t card, char *buf) {
+    unsigned char rank_num = card.rank;
+    unsigned char suit_num = card.suit;
+
+    char rank, suit;
+
+    switch (rank_num) {
+        case A_RANK:
+            rank = 'A';
+            break;
+        case K_RANK:
+            rank = 'K';
+            break;
+        case Q_RANK:
+            rank = 'Q';
+            break;
+        case J_RANK:
+            rank = 'J';
+            break;
+        case T_RANK:
+            rank = 'T';
+            break;
+        default:
+            rank = rank_num + ASCII_NUM_OFFSET;
+    }
+
+    switch (suit_num) {
+        case DIAMOND:
+            suit = 'd';
+            break;
+        case HEART:
+            suit = 'h';
+            break;
+        case SPADE:
+            suit = 's';
+            break;
+        case CLUB:
+            suit = 'c';
+            break;
+    }
+
+    buf[0] = rank;
+    buf[1] = suit;
+}
+
 void int_to_hand(int hand, char *buf) {
     int type_bits = hand >> QUAL_BITS;
     enum hand_type type = 0;
