@@ -24,14 +24,14 @@ extern "C" {
 
 __constant__ GlobalConstants cuConsts;
 
-#define CHECK_CALL 0
+/*#define CHECK_CALL 0
 #define CHECK_FOLD 1
 #define BET 2
 #define OOP_MOVES 3
 
 #define IP_MOVES 4
 
-#define NUM_STRATEGIES_PER_ITERATION 100
+#define NUM_STRATEGIES_PER_ITERATION 100*/
 
 char **cudaOopStrategies;
 int *cudaOutput;

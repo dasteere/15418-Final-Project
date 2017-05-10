@@ -16,6 +16,14 @@ typedef struct GlobalConstants {
     int afterBetSize;
 } GlobalConstants;
 
+#define CHECK_CALL 0
+#define CHECK_FOLD 1
+#define BET 2
+#define OOP_MOVES 3
+
+#define IP_MOVES 4
+
+#define NUM_STRATEGIES_PER_ITERATION 100
 
 GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
         int oopSize, card_t*ipRange, int ipSize, int potSize, int betSize);
