@@ -34,13 +34,13 @@
 
 typedef struct __attribute__((packed)) card {
     unsigned char suit:4;
-    unsigned char rank:4;  
+    unsigned char rank:4;
 } card_t;
 
-enum hand_type { STRAIGHT_FLUSH = 8, QUADS = 7, BOAT = 6, FLUSH = 5, 
-                    STRAIGHT = 4, TRIPS = 3, TWO_PAIR = 2, PAIR = 1, 
+enum hand_type { STRAIGHT_FLUSH = 8, QUADS = 7, BOAT = 6, FLUSH = 5,
+                    STRAIGHT = 4, TRIPS = 3, TWO_PAIR = 2, PAIR = 1,
                     HIGH_CARD = 0 };
 
-int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]); 
+int rank_of(card_t board[BOARD_SIZE], card_t hand[HAND_SIZE]);
 
 void int_to_hand(int hand, char *buf);
