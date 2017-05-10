@@ -26,6 +26,7 @@ int str_to_card(char *str, card_t *card) {
             break;
         case 'T':
             rank_num = T_RANK;
+            break;
         default:
             rank_num = rank - ASCII_NUM_OFFSET;
     } 
