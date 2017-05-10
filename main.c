@@ -12,33 +12,34 @@ int main() {
     card_t *ipRange = (card_t *) malloc(2 * ipSize * sizeof(card_t));
     card_t board[HAND_SIZE];
     for (int i = 0; i < HAND_SIZE; i++) {
-        if (i > 0) scanf(" ");
-        scanf("%c%c", card1, card1 + 1);
+        printf("%d\n", i);
+        scanf("%c%c,", card1, card1 +1);
+        printf("Read in %c%c\n", card1[0], card1[1]);
         if (str_to_card(card1, &board[i]) < 0) {
-            printf("Invalid input: %c%c\n", card1, card1+1);
+            printf("Invalid input: %c%c\n", card1[0], card1[1]);
             return 0;
         }
     }
     scanf("\nOOP RANGE\n");
     for (int i = 0; i < oopSize; i++) {
-        scanf("%c%c %c%c\n", card1, card1 + 1, card2, card2);
+        scanf("%c%c,%c%c,\n", card1, card1 + 1, card2, card2);
         if (str_to_card(card1, &oopRange[i*2]) < 0) {
-            printf("Invalid input: %c%c\n", card1, card1+1);
+            printf("Invalid input: %c%c\n", card1[0], card1[1]);
             return 0;
         }
         if (str_to_card(card2, &oopRange[(i*2) + 1]) < 0) {
-            printf("Invlaid input: %c%c\n", card2, card2+1);
+            printf("Invlaid input: %c%c\n", card2[0], card2[1]);
         }
     }
     scanf("IP RANGE\n");
     for (int i = 0; i < ipSize; i++) {
-        scanf("%c%c %c%c\n", card1, card1 + 1, card2, card2 + 1);
+        scanf("%c%c,%c%c,\n", card1, card1 + 1, card2, card2 + 1);
         if (str_to_card(card1, &ipRange[i*2]) < 0) {
-            printf("Invalid input: %c%c\n", card1, card1+1);
+            printf("Invalid input: %c%c\n", card1[0], card1[1]);
             return 0;
         }
         if (str_to_card(card2, &ipRange[(i*2) + 1]) < 0) {
-            printf("Invlaid input: %c%c\n", card2, card2+1);
+            printf("Invlaid input: %c%c\n", card2[0], card2[1]);
         }
     }
 
