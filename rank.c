@@ -6,6 +6,54 @@ int hand_to_int(enum hand_type t, int qual) {
     return (1 << (QUAL_BITS  + t)) | qual;
 }
 
+int str_to_card(char *str, card_t *card) {
+    char rank = str[0];
+    char suit = str[1];
+
+    unsigned char rank_num;
+    switch (rank) {
+        case "A":
+            rank_num = A_RANK;
+            break;
+        case "K":
+            rank_num = K_RANK;
+            break;
+        case "Q":
+            rank_num = Q_RANK;
+            break;
+        case "J":
+            rank_num = J_RANK;
+            break;
+        case "T":
+            rank_num = T_RANK;
+        default:
+            rank_num = rank - ASCII_NUM_OFFSET;
+    } 
+    if (rank_num >= NUM_SUITS) return -1;
+
+    unsigned char suit_num;
+    switch (suit) {
+        case "d":
+            suit_num = DIAMOND;
+            break;
+        case "h":
+            suit_num = HEART;
+            break;
+        case "c":
+            suit_num = CLUB;
+            break;
+        case "s":
+            suit_num = SPADE;
+            break;
+        default:
+            return -1;
+    }
+
+    card->rank = rank_num;
+    card->suit = suit_num;
+    return 0;
+}
+
 void int_to_hand(int hand, char *buf) {
     int type_bits = hand >> QUAL_BITS;
     enum hand_type type = 0;

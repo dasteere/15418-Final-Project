@@ -12,6 +12,14 @@ extern "C" {
 
 #define MAX_SUIT_VAL CLUB+1
 
+#define A_RANK 12
+#define K_RANK 11
+#define Q_RANK 10
+#define J_RANK 9
+#define T_RANK 8
+
+#define ASCII_NUM_OFFSET 50
+
 #define BOARD_SIZE 5
 #define HAND_SIZE 2
 
@@ -52,7 +60,7 @@ int rank_of(card_t *board, card_t *hand);
 
 void int_to_hand(int hand, char *buf);
 
-card_t str_to_card(char rank, char suit);
+int str_to_card(char *str, card_t *card);
 
 #if defined(__cplusplus)
 }
