@@ -98,6 +98,7 @@ void card_to_str(card_t card, char *buf) {
 
     buf[0] = rank;
     buf[1] = suit;
+    buf[2] = '\0';
 }
 
 void int_to_hand(int hand, char *buf) {
