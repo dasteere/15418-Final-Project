@@ -159,7 +159,7 @@ void int_to_hand(int hand, char *buf) {
     }
 }
 
-int rank_of(card_t *board, card_t *hand) {
+int rank_of(board_t *board, hand_t *hand) {
     char rank_suits[NUM_RANKS];
     char ranks[NUM_RANKS];
     char suits[MAX_SUIT_VAL];
@@ -173,16 +173,16 @@ int rank_of(card_t *board, card_t *hand) {
     }
 
     for (int i = 0; i < BOARD_SIZE; i++) {
-        unsigned char suit = board[i].suit;
-        unsigned char rank = board[i].rank;
+        unsigned char suit = board->cards[i].suit;
+        unsigned char rank = board->cards[i].rank;
 
         rank_suits[rank] |= suit;
         ranks[rank]++;
         suits[suit]++;
     }
     for (int i = 0; i < HAND_SIZE; i++) {
-        unsigned char suit = hand[i].suit;
-        unsigned char rank = hand[i].rank;
+        unsigned char suit = hand->cards[i].suit;
+        unsigned char rank = hand->cards[i].rank;
 
         rank_suits[rank] |= suit;
         ranks[rank]++;
