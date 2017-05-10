@@ -103,11 +103,22 @@ GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
         //card_to_str(ipRange[i*2+1], handBuffer + 3);
         //printf("Hand: %s%s, Score: %d, Rank: %s\n", handBuffer, handBuffer + 3, ipRanks[i], buffer);
     }
-    cudaMalloc(&(params->oopRanks), sizeof(int) * oopSize);
+    if (cudaMalloc(&(params->oopRanks), sizeof(int) * oopSize) != cudaSuccess) {
+        printf("Cuda malloc failed line 106\n");
+        assert(0);
+    }
     cudaMalloc(&(params->ipRanks), sizeof(int) * ipSize);
 
-    cudaMemcpy(params->oopRanks, oopRanks, sizeof(int) * oopSize, cudaMemcpyHostToDevice);
-    cudaMemcpy(params->ipRanks, ipRanks, sizeof(int) * ipSize, cudaMemcpyHostToDevice);
+    if (cudaMemcpy(params->oopRanks, oopRanks, sizeof(int) * oopSize,
+                cudaMemcpyHostToDevice) != cudaSuccess) {
+        printf("Cuda Memcpy failed line 109\n");
+        assert(0);
+    }
+    if (cudaMemcpy(params->ipRanks, ipRanks, sizeof(int) * ipSize,
+                cudaMemcpyHostToDevice) != cudaSuccess) {
+        printf("Cuda Memcpy Failed line 113\n");
+        assert(0);
+    }
 
     params->oopSize = oopSize;
     params->ipSize = ipSize;
@@ -128,18 +139,34 @@ void addOne(char *curStrategy, GlobalConstants *params) {
 //calculates the best strategy for the oop player along with the strategies value
 extern "C"
 void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
-    cudaMemcpyToSymbol(cuConsts, params, sizeof(GlobalConstants));
+    if (cudaMemcpyToSymbol(cuConsts, params,
+                sizeof(GlobalConstants)) != cudaSuccess) {
+        printf("cuda memcpy to symbol failed line 141\n");
+        assert(0);
+    }
 
 
     char **oopStrategies =
         (char **) malloc(NUM_STRATEGIES_PER_ITERATION * sizeof(char *));
-    cudaMalloc(&cudaOopStrategies, NUM_STRATEGIES_PER_ITERATION * sizeof(char *));
+    if (cudaMalloc(&cudaOopStrategies,
+                NUM_STRATEGIES_PER_ITERATION * sizeof(char *)) != cudaSuccess) {
+        printf("Cuda malloc failed line 149\n");
+        assert(0);
+    }
 
     for (int i = 0; i < NUM_STRATEGIES_PER_ITERATION; i++) {
-        cudaMalloc(&oopStrategies[i], params->oopSize * sizeof(char));
+        if (cudaMalloc(&oopStrategies[i],
+                    params->oopSize * sizeof(char)) != cudaSuccess) {
+            printf("cuda malloc failed line 154\n");
+            assert(0);
+        }
     }
-    cudaMemcpy(cudaOopStrategies, oopStrategies,
-            NUM_STRATEGIES_PER_ITERATION * sizeof(char*), cudaMemcpyHostToDevice);
+    if (cudaMemcpy(cudaOopStrategies, oopStrategies,
+            NUM_STRATEGIES_PER_ITERATION * sizeof(char*),
+            cudaMemcpyHostToDevice) != cudaSuccess) {
+        printf("cuda memcpy fialed line 160\n");
+        assert(0);
+    }
 
     int totalStrategies = 1;
     for (int i = 0; i < params->oopSize; i++) {
@@ -147,7 +174,11 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
     }
 
     output = (int *) malloc(NUM_STRATEGIES_PER_ITERATION * sizeof(int));
-    cudaMalloc(&cudaOutput, NUM_STRATEGIES_PER_ITERATION * sizeof(int));
+    if (cudaMalloc(&cudaOutput,
+                NUM_STRATEGIES_PER_ITERATION * sizeof(int)) != cudaSuccess) {
+        printf("cuda malloc failed line 172\n");
+        assert(0);
+    }
 
     char *curStrategy = (char *) malloc(params->oopSize * sizeof(char));
     memset(curStrategy, 0, params->oopSize * sizeof(char));
@@ -169,7 +200,11 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
                 assert(0);
             }
         }
-        cudaMemset(cudaOutput, 0, NUM_STRATEGIES_PER_ITERATION * sizeof(int));
+        if (cudaMemset(cudaOutput, 0,
+                    NUM_STRATEGIES_PER_ITERATION * sizeof(int)) != cudaSuccess) {
+            printf("cuda memset failed line 197\n");
+            assert(0);
+        }
         kernel_calculateValue<<<NUM_STRATEGIES_PER_ITERATION, numThreads>>>
             (handsPerThread, cudaOopStrategies, cudaOutput);
         if (cudaMemcpy(output, cudaOutput, NUM_STRATEGIES_PER_ITERATION * sizeof(int),
