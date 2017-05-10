@@ -13,9 +13,9 @@ struct GlobalConstants {
     __constant__ int afterBetSize;
 };
 
-#define CHECK_CALL 1
-#define CHECK_FOLD 2
-#define BET 3
+#define CHECK_CALL 0
+#define CHECK_FOLD 1
+#define BET 2
 #define OOP_MOVES 3
 
 #define CHECK 4
@@ -26,15 +26,15 @@ struct GlobalConstants {
 
 #define NUM_STRATEGIES_PER_ITERATION 100
 
-char *oopStrategies[NUM_STRATEGIES_PER_ITERATION];
-int output[NUM_STRATEGIES_PER_ITERATION];
-
+char **cudaOopStrategies;
+int *cudaOutput;
+int *output;
 
 __global__ void kernel_calculateValue(int handsPerThread, int *output) {
     int idx = threadIdx.x;
     int strategyIdx = blockIdx.x;
 
-    char *strategy = oopStrategies[strategyIdx];
+    char *strategy = cudaOopStrategies[strategyIdx];
     int *out = output[strategyIdx];
     int check = 0;
     int bet = 0;
@@ -74,14 +74,45 @@ __global__ void kernel_calculateValue(int handsPerThread, int *output) {
     }
 }
 
+void addOne(int *curStrategy) {
+    for (int i = 0; i < oopSize - 1; i++) {
+        curStrategy[i] = (curStrategy[i] + 1) % OOP_MOVES;
+        if (curStrategy[i] != 0) break;
+    }
+}
+
 void calcMaxStrategy(char *bestStrat) {
+    cudaMalloc(&cudaOopStrategies, NUM_STRATEGIES_PER_ITERATION * sizeof(char *));
     for (int i = 0; i < NUM_STRATEGIES_PER_ITERATION; i++) {
-        oopStrategies[i] = (char *) malloc(oopSize * sizeof(char));
+        cudaMalloc(&cudaOopStrategies[i], oopSize * sizeof(char));
     }
     int totalStrategies = 1;
     for (int i = 0; i < oopSize; i++) {
-        totalStrategies *= 3;
+        totalStrategies *= OOP_MOVES;
     }
-    int totalStrategies =
-
+    output = (int *) malloc(NUM_STRATEGIES_PER_ITERATIONS * sizeof(int));
+    char *curStrategy = (char *) malloc(oopSize * sizeof(char));
+    memset(curStrategy, 0, oopSize * sizeof(char));
+    cudaMalloc(&cudaOutput, NUM_STRATEGIES_PER_ITERATION * sizeof(int));
+    int numThreads = 64 > ipSize : ipSize ? 64;
+    int handsPerThread = ipSize / numThreads;
+    char *minStrategy = (char *) malloc(oopSize * sizeof(char));
+    int minValue = 1 << (sizeof(int) - 2);
+    for (int i = 0; i < totalStrategies / NUM_STRATEGIES_PER_ITERATION; i++) {
+        for (int j = 0; j < NUM_STRATEGIES_PER_ITERATION; j++) {
+            addOne(curStrategy);
+            cudaMemcpy(cudaOopStrategies[j], curStrategy, oopSize * sizeof(char), cudaMemcpyHostToDevice);
+        }
+        kernel_calculateValue<<<NUM_STRATEGIES_PER_ITERATION, numThreads>>>(handsPerThread, cudaOutput);
+        cudaMemcpy(output, cudaOutput, NUM_THREADS_PER_ITERATION * sizeof(int), cudaMemcpyDeviceToHost);
+        //need to synchronize here
+        int minIdx = -1;
+        for (int k = 0; k < NUM_STRATEGIES_PER_ITERATION; k++) {
+            if (output[k] < minFound) {
+                minIdx = k;
+                minFound = output[k];
+            }
+        }
+        cudaMemcpy(minStrategy, cudaOopStrategies[minIdx], oopSize * sizeof(char), cudaMemcpyDeviceToHost);
+    }
 }
