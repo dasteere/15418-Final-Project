@@ -10,7 +10,9 @@ def printHand(hand, offsuit):
     if offsuit:
         for i in suits:
             for j in suits:
-                if suits.index(i) <= suits.index(j):
+                if suits.index(i) == suits.index(j):
+                    continue
+                if r1 == r2 and suits.index(i) < suits.index(j):
                     continue
                 print(r1 + i + "," + r2 + j + ',')
     else:
