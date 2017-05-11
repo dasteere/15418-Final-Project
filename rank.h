@@ -1,10 +1,6 @@
 #ifndef _RANK_H
 #define _RANK_H
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 #define DIAMOND (1 << 0)
 #define HEART   (1 << 1)
 #define SPADE   (1 << 2)
@@ -68,14 +64,18 @@ enum hand_type { STRAIGHT_FLUSH = 8, QUADS = 7, BOAT = 6, FLUSH = 5,
 
 int rank_of(board_t *board, hand_t *hand);
 
+int suit_to_uchar(char suit, unsigned char *uchar);
+
+int rank_to_uchar(char rank, unsigned char *uchar);
+
+int uchar_to_suit(unsigned char uchar, char *suit);
+
+int uchar_to_rank(unsigned char uchar, char *rank);
+
 void int_to_hand(int hand, char *buf);
 
-void card_to_str(card_t card, char *buf);
+int card_to_str(card_t card, char *buf);
 
 int str_to_card(char *str, card_t *card);
-
-#if defined(__cplusplus)
-}
-#endif
 
 #endif /* _RANK_H */

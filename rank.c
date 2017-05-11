@@ -6,10 +6,27 @@ int hand_to_int(enum hand_type t, int qual) {
     return (1 << (QUAL_BITS  + t)) | qual;
 }
 
-int str_to_card(char *str, card_t *card) {
-    char rank = str[0];
-    char suit = str[1];
+int suit_to_uchar(char suit, unsigned char *uchar) {
+    switch (suit) {
+        case 'd':
+            *uchar = DIAMOND;
+            break;
+        case 'h':
+            *uchar = HEART;
+            break;
+        case 'c':
+            *uchar = CLUB;
+            break;
+        case 's':
+            *uchar = SPADE;
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}
 
+int rank_to_uchar(char rank, unsigned char *uchar) {
     unsigned char rank_num;
     switch (rank) {
         case 'A':
@@ -32,73 +49,82 @@ int str_to_card(char *str, card_t *card) {
     } 
     if (rank_num >= NUM_RANKS) return -1;
 
-    unsigned char suit_num;
-    switch (suit) {
-        case 'd':
-            suit_num = DIAMOND;
+    *uchar = rank_num;
+    return 0;
+}
+
+int uchar_to_suit(unsigned char uchar, char *suit) {
+    switch (uchar) {
+        case DIAMOND:
+            *suit = 'd';
             break;
-        case 'h':
-            suit_num = HEART;
+        case HEART:
+            *suit = 'h';
             break;
-        case 'c':
-            suit_num = CLUB;
+        case SPADE:
+            *suit = 's';
             break;
-        case 's':
-            suit_num = SPADE;
+        case CLUB:
+            *suit = 'c';
             break;
         default:
             return -1;
     }
+    return 0;
+}
 
+int uchar_to_rank(unsigned char uchar, char *rank) {
+    switch (uchar) {
+        case A_RANK:
+            *rank = 'A';
+            break;
+        case K_RANK:
+            *rank = 'K';
+            break;
+        case Q_RANK:
+            *rank = 'Q';
+            break;
+        case J_RANK:
+            *rank = 'J';
+            break;
+        case T_RANK:
+            *rank = 'T';
+            break;
+        default:
+            if (uchar >= NUM_RANKS) return -1;
+            *rank = uchar + ASCII_NUM_OFFSET;
+    }
+    return 0;
+}
+
+int str_to_card(char *str, card_t *card) {
+    char rank = str[0];
+    char suit = str[1];
+
+    unsigned char rank_num;
+    if (rank_to_uchar(rank, &rank_num) < 0) return -1;
+
+    unsigned char suit_num;
+    if (suit_to_uchar(suit, &suit_num) < 0) return -1;
+    
     card->rank = rank_num;
     card->suit = suit_num;
     return 0;
 }
 
-void card_to_str(card_t card, char *buf) {
+int card_to_str(card_t card, char *buf) {
     unsigned char rank_num = card.rank;
     unsigned char suit_num = card.suit;
 
     char rank, suit;
 
-    switch (rank_num) {
-        case A_RANK:
-            rank = 'A';
-            break;
-        case K_RANK:
-            rank = 'K';
-            break;
-        case Q_RANK:
-            rank = 'Q';
-            break;
-        case J_RANK:
-            rank = 'J';
-            break;
-        case T_RANK:
-            rank = 'T';
-            break;
-        default:
-            rank = rank_num + ASCII_NUM_OFFSET;
-    }
-
-    switch (suit_num) {
-        case DIAMOND:
-            suit = 'd';
-            break;
-        case HEART:
-            suit = 'h';
-            break;
-        case SPADE:
-            suit = 's';
-            break;
-        case CLUB:
-            suit = 'c';
-            break;
-    }
+    if (uchar_to_rank(rank_num, &rank) < 0 ||
+            uchar_to_suit(suit_num, &suit) < 0) return -1;
 
     buf[0] = rank;
     buf[1] = suit;
     buf[2] = '\0';
+    return 0;
 }
 
 void int_to_hand(int hand, char *buf) {
