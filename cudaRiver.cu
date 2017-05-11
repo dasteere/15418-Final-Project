@@ -82,26 +82,16 @@ __global__ void kernel_calculateValue(int handsPerThread,
 }
 
 extern "C"
-GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
-        int oopSize, card_t *ipRange, int ipSize, int potSize, int betSize) {
+GlobalConstants *calcGlobalConsts(board_t board, hand_t *oopRange,
+        int oopSize, hand_t *ipRange, int ipSize, int potSize, int betSize) {
     GlobalConstants *params = (GlobalConstants *) malloc(sizeof(GlobalConstants));
     int *oopRanks = (int *) malloc(oopSize * sizeof(int));
     int *ipRanks = (int *) malloc(ipSize * sizeof(int));
-    //char buffer[64];
-    //char handBuffer[6];
     for (int i = 0; i < oopSize; i++) {
-        oopRanks[i] = rank_of(board, oopRange + (i*2));
-        //int_to_hand(oopRanks[i], buffer);
-        //card_to_str(oopRange[i*2], handBuffer);
-        //card_to_str(oopRange[i*2+1], handBuffer + 3);
-        //printf("Hand: %s%s, Score: %d, Rank: %s\n", handBuffer, handBuffer + 3, oopRanks[i], buffer);
+        oopRanks[i] = rank_of(&board, &oopRange[i]);
     }
     for (int i = 0; i < ipSize; i++) {
-        ipRanks[i] = rank_of(board, ipRange + (i*2));
-        //int_to_hand(ipRanks[i], buffer);
-        //card_to_str(ipRange[i*2], handBuffer);
-        //card_to_str(ipRange[i*2+1], handBuffer + 3);
-        //printf("Hand: %s%s, Score: %d, Rank: %s\n", handBuffer, handBuffer + 3, ipRanks[i], buffer);
+        ipRanks[i] = rank_of(&board, &ipRange[i]);
     }
     if (cudaMalloc(&(params->oopRanks), sizeof(int) * oopSize) != cudaSuccess) {
         printf("Cuda malloc failed line 106\n");
@@ -125,7 +115,7 @@ GlobalConstants *calcGlobalConsts(card_t *board, card_t *oopRange,
     params->potSize = potSize;
     params->betSize = betSize;
     params->afterBetSize = potSize + betSize;
-    //printf("Done\n");
+
     return params;
 }
 
