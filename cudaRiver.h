@@ -21,13 +21,21 @@ typedef struct GlobalConstants {
 #define BET 2
 #define OOP_MOVES 3
 
+#define IP_BET 0
+#define IP_CHECK 1
+#define IP_CALL 2
+#define IP_FOLD 3
+
 #define IP_MOVES 4
 
 #define NUM_STRATEGIES_PER_ITERATION 100
+#define MAX_THREADS 64
 
 GlobalConstants *calcGlobalConsts(board_t board, hand_t *oopRange,
         int oopSize, hand_t *ipRange, int ipSize, int potSize, int betSize);
 
 void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params);
 
+void calcMaxIpStrategy(char *bestOopStrat, char *bestIpCheckStrat,
+        char *bestIpBetStrat, GlobalConstants *params);
 #endif /* _CUDA_RIVER_H */
