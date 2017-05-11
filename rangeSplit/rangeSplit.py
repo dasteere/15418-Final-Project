@@ -36,6 +36,11 @@ for grp in sys.stdin.readlines()[0].split(','):
                 printHand(hand, True)
                 printHand(hand, False)
     else:
-        offsuit = "o" in grp
         hand = [grp[0],grp[1]]
-        printHand(hand, offsuit)
+        if "o" in grp:
+            printHand(hand, True)
+        elif "s" in grp:
+            printHand(hand, False)
+        else:
+            printHand(hand, False)
+            printHand(hand, True)
