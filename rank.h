@@ -43,7 +43,6 @@
 
 #define CARD_STR_LEN 3
 
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
 
 typedef struct __attribute__((packed)) card {
     unsigned char suit:4;

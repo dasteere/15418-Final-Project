@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include "rank.h"
 
+#define MAX(x,y) ((x) > (y) ? (x) : (y))
+
 int hand_to_int(enum hand_type t, int qual) {
     return (1 << (QUAL_BITS  + t)) | qual;
 }
