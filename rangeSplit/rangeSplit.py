@@ -37,12 +37,12 @@ for grp in sys.stdin.readlines()[0].split(','):
                 printHand(hand, False)
     else:
         hand = [grp[0],grp[1]]
-        if "o" in grp:
+        if len(grp) == 4:
+            print(grp + ',')
+        elif "o" in grp:
             printHand(hand, True)
         elif "s" in grp:
             printHand(hand, False)
-        elif len(grp) == 2:
+        else len(grp) == 2:
             printHand(hand, False)
             printHand(hand, True)
-        else:
-            print(grp + ',')
