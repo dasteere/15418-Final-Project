@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "rank.h"
 #include "cudaRiver.h"
+#include "output_utils.h"
 
 static void get_oop_action_lists(hand_t *range, char *strat, int n,
         hand_t *check_call, hand_t *check_fold, hand_t *bet,
