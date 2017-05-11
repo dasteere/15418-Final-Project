@@ -63,6 +63,7 @@ static void get_oop_action_lists(hand_t *range, char *strat, int n,
                 bet[bet_idx++] = hand;
                 break;
             default:
+                printf("Strategy: %d", (int) strat[i]);
                 assert(0);
         }
     }

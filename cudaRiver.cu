@@ -39,12 +39,11 @@ int *output;
 
 
 
-__global__ void kernel_calculateValue(int handsPerThread,
+__global__ void kernel_calculateValue(int numThreads, int numBlocks,
         char **cudaOopStrategies, int *output) {
     int idx = threadIdx.x;
     int strategyIdx = blockIdx.x;
 
-    char *strategy = cudaOopStrategies[strategyIdx];
     int check = 0;
     int bet = 0;
     int call = 0;
@@ -52,38 +51,40 @@ __global__ void kernel_calculateValue(int handsPerThread,
     int cb_max = 0;
     int cf_max = 0;
     int ipRank, oopRank, oopMove, showdown, showPot, showBet;
-    for (int i = idx; i < cuConsts.ipSize; i += handsPerThread) {
-        ipRank = cuConsts.ipRanks[i];
-        for (int j = 0; j < cuConsts.oopSize; j++) {
-            oopRank = cuConsts.oopRanks[j];
-            oopMove = strategy[j];
-            showdown = ipRank > oopRank ? 1 : -1;
-            showPot = ipRank > oopRank ? cuConsts.potSize : 0;
-            showBet = showPot + (showdown * cuConsts.betSize);
-            switch (oopMove) {
-            case CHECK_CALL:
-                check += showPot;
-                bet += showBet;
-            case CHECK_FOLD:
-                check += showPot;
-                bet += cuConsts.potSize;
-            case BET:
-                call += showBet;
-                fold -= cuConsts.potSize;
+    for (int k = strategyIdx; k < NUM_STRATEGIES_PER_ITERATION; k += numBlocks) {
+        char *strategy = cudaOopStrategies[k];
+        for (int i = idx; i < cuConsts.ipSize; i += numThreads) {
+            ipRank = cuConsts.ipRanks[i];
+            for (int j = 0; j < cuConsts.oopSize; j++) {
+                oopRank = cuConsts.oopRanks[j];
+                oopMove = strategy[j];
+                showdown = ipRank > oopRank ? 1 : -1;
+                showPot = ipRank > oopRank ? cuConsts.potSize : 0;
+                showBet = showPot + (showdown * cuConsts.betSize);
+                switch (oopMove) {
+                case CHECK_CALL:
+                    check += showPot;
+                    bet += showBet;
+                case CHECK_FOLD:
+                    check += showPot;
+                    bet += cuConsts.potSize;
+                case BET:
+                    call += showBet;
+                }
             }
+            cb_max = check > bet ? check : bet;
+            cf_max = call > fold ? call : fold;
+            //could be a bottleneck
+            atomicAdd(output + strategyIdx, cb_max + cf_max);
+            check = 0;
+            bet = 0;
+            call = 0;
+            fold = 0;
         }
-        cb_max = check > bet ? check : bet;
-        cf_max = call > fold ? call : fold;
-        //could be a bottleneck
-        atomicAdd(output + strategyIdx, cb_max + cf_max);
-        check = 0;
-        bet = 0;
-        call = 0;
-        fold = 0;
     }
 }
 
-__global__ void kernel_calculateIpStrat(int handsPerThread,
+__global__ void kernel_calculateIpStrat(int numThreads,
         char *strategy, char *betStrategy, char *checkStrategy) {
     int idx = threadIdx.x;
 
@@ -92,7 +93,7 @@ __global__ void kernel_calculateIpStrat(int handsPerThread,
     int call = 0;
     int fold = 0;
     int ipRank, oopRank, oopMove, showdown, showPot, showBet;
-    for (int i = idx; i < cuConsts.ipSize; i += handsPerThread) {
+    for (int i = idx; i < cuConsts.ipSize; i += numThreads) {
         ipRank = cuConsts.ipRanks[i];
         for (int j = 0; j < cuConsts.oopSize; j++) {
             oopRank = cuConsts.oopRanks[j];
@@ -109,7 +110,6 @@ __global__ void kernel_calculateIpStrat(int handsPerThread,
                 bet += cuConsts.potSize;
             case BET:
                 call += showBet;
-                fold -= cuConsts.potSize;
             }
         }
         checkStrategy[i] = check > bet ? IP_CHECK : IP_BET;
@@ -202,7 +202,6 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
     for (int i = 0; i < params->oopSize; i++) {
         totalStrategies *= OOP_MOVES;
     }
-
     output = (int *) malloc(NUM_STRATEGIES_PER_ITERATION * sizeof(int));
     if (cudaMalloc(&cudaOutput,
                 NUM_STRATEGIES_PER_ITERATION * sizeof(int)) != cudaSuccess) {
@@ -214,14 +213,18 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
     memset(curStrategy, 0, params->oopSize * sizeof(char));
 
     int numThreads = MAX_THREADS > params->ipSize ? params->ipSize : MAX_THREADS;
+    int numBlocks = MAX_BLOCKS > NUM_STRATEGIES_PER_ITERATION
+        ? MAX_BLOCKS : NUM_STRATEGIES_PER_ITERATION;
 
-    int handsPerThread = params->ipSize / numThreads;
+
     char *minStrategy = (char *) malloc(params->oopSize * sizeof(char));
     int minFound = INT_MAX;
-
+    int numIter = totalStrategies / NUM_STRATEGIES_PER_ITERATION;
+    if (numIter == 0) numIter = 1;
     //number of kernel invokations needed
-    for (int i = 0; i < totalStrategies / NUM_STRATEGIES_PER_ITERATION; i++) {
+    for (int i = 0; i < numIter; i++) {
         //strategies per kernel call
+        if (i*NUM_STRATEGIES_PER_ITERATION%100000==0) printf("Iteration: %d\n", i*NUM_STRATEGIES_PER_ITERATION);
         for (int j = 0; j < NUM_STRATEGIES_PER_ITERATION; j++) {
             addOne(curStrategy, params);
             if (cudaMemcpy(oopStrategies[j], curStrategy, params->oopSize *
@@ -235,8 +238,8 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
             printf("cuda memset failed line 197\n");
             assert(0);
         }
-        kernel_calculateValue<<<NUM_STRATEGIES_PER_ITERATION, numThreads>>>
-            (handsPerThread, cudaOopStrategies, cudaOutput);
+        kernel_calculateValue<<<numBlocks, numThreads>>>
+            (numThreads, numBlocks, cudaOopStrategies, cudaOutput);
         if (cudaMemcpy(output, cudaOutput, NUM_STRATEGIES_PER_ITERATION * sizeof(int),
                     cudaMemcpyDeviceToHost) != cudaSuccess) {
             printf("CudaMemcpy Failed\n");
@@ -289,10 +292,8 @@ void calcMaxIpStrategy(char *bestOopStrat, char *bestIpCheckStrat,
 
     int numThreads = MAX_THREADS > params->ipSize ? params->ipSize : MAX_THREADS;
 
-    int handsPerThread = params->ipSize / numThreads;
-
     kernel_calculateIpStrat<<<1, numThreads>>>
-        (handsPerThread, cudaOopStrat, cudaIpBetStrat, cudaIpCheckStrat);
+        (numThreads, cudaOopStrat, cudaIpBetStrat, cudaIpCheckStrat);
 
     if (cudaMemcpy(bestIpCheckStrat, cudaIpCheckStrat, params->ipSize * sizeof(char), cudaMemcpyDeviceToHost) != cudaSuccess) {
         printf("cuda memcpy failed line 299\n");
