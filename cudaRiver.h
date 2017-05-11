@@ -28,6 +28,7 @@ typedef struct GlobalConstants {
 
 #define IP_MOVES 4
 
+#define ITERATIONS_TO_PRINT 100000
 #define NUM_STRATEGIES_PER_ITERATION 10000
 #define MAX_THREADS 64
 #define MAX_BLOCKS 16

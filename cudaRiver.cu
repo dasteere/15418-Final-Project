@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <assert.h>
-
+#include <time.h>
 
 extern "C" {
 #include "cudaRiver.h"
@@ -221,10 +221,18 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
     int minFound = INT_MAX;
     int numIter = totalStrategies / NUM_STRATEGIES_PER_ITERATION;
     if (numIter == 0) numIter = 1;
+    clock_t startLoop = clock();
+    clock_t start = clock();
+    clock_t end;
     //number of kernel invokations needed
     for (int i = 0; i < numIter; i++) {
         //strategies per kernel call
-        if (i*NUM_STRATEGIES_PER_ITERATION%100000==0) printf("Iteration: %d\n", i*NUM_STRATEGIES_PER_ITERATION);
+        if (i>0 && i*NUM_STRATEGIES_PER_ITERATION%ITERATIONS_TO_PRINT==0) {
+            end = clock();
+            double time = (double) (end - start) / CLOCKS_PER_SEC;
+            printf("Iteration: %d, Time: %.4f sec, Iterations per second: %.0f\n", i*NUM_STRATEGIES_PER_ITERATION, time, ITERATIONS_TO_PRINT / time);
+            start = clock();
+        }
         for (int j = 0; j < NUM_STRATEGIES_PER_ITERATION; j++) {
             addOne(curStrategy, params);
             if (cudaMemcpy(oopStrategies[j], curStrategy, params->oopSize *
@@ -263,6 +271,9 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
         }
     }
     *stratVal = minFound;
+    clock_t endLoop = clock();
+    double time = (double) (endLoop - startLoop) / CLOCKS_PER_SEC;
+    printf("Average iterations per second: %2.f\n", totalStrategies / time);
 }
 
 extern "C"

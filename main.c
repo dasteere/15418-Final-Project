@@ -1,11 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "cudaRiver.h"
 #include "output_utils.h"
 
 int main() {
+    clock_t start = clock();
     int oopSize, ipSize, potSize, betSize;
     char card1[2], card2[2];
     scanf("%d %d %d %d\n", &oopSize, &ipSize, &potSize, &betSize);
@@ -56,4 +58,8 @@ int main() {
 
     output_human_readable(oopRange, bestOopStrategy, oopSize,
             ipRange, bestIpCheckStrategy, bestIpBetStrategy, ipSize);
+
+    clock_t end = clock();
+    double time = (double) (end - start) / CLOCKS_PER_SEC;
+    printf("Total time taken: %.2f seconds\n", time);
 }
