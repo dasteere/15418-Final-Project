@@ -45,6 +45,6 @@ for grp in sys.stdin.readlines()[0].split(','):
             printHand(hand, True)
         elif "s" in grp:
             printHand(hand, False)
-        else len(grp) == 2:
+        elif len(grp) == 2:
             printHand(hand, False)
             printHand(hand, True)
