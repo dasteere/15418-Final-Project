@@ -6,9 +6,7 @@
 
 
 extern "C" {
-#include "rank.h"
 #include "cudaRiver.h"
-#include "output_utils.h"
 }
 
 /*struct GlobalConstants {
@@ -38,6 +36,8 @@ __constant__ GlobalConstants cuConsts;
 char **cudaOopStrategies;
 int *cudaOutput;
 int *output;
+
+
 
 __global__ void kernel_calculateValue(int handsPerThread,
         char **cudaOopStrategies, int *output) {
@@ -76,6 +76,44 @@ __global__ void kernel_calculateValue(int handsPerThread,
         cf_max = call > fold ? call : fold;
         //could be a bottleneck
         atomicAdd(output + strategyIdx, cb_max + cf_max);
+        check = 0;
+        bet = 0;
+        call = 0;
+        fold = 0;
+    }
+}
+
+__global__ void kernel_calculateIpStrat(int handsPerThread,
+        char *strategy, char *betStrategy, char *checkStrategy) {
+    int idx = threadIdx.x;
+
+    int check = 0;
+    int bet = 0;
+    int call = 0;
+    int fold = 0;
+    int ipRank, oopRank, oopMove, showdown, showPot, showBet;
+    for (int i = idx; i < cuConsts.ipSize; i += handsPerThread) {
+        ipRank = cuConsts.ipRanks[i];
+        for (int j = 0; j < cuConsts.oopSize; j++) {
+            oopRank = cuConsts.oopRanks[j];
+            oopMove = strategy[j];
+            showdown = ipRank > oopRank ? 1 : -1;
+            showPot = ipRank > oopRank ? cuConsts.potSize : 0;
+            showBet = showPot + (showdown * cuConsts.betSize);
+            switch (oopMove) {
+            case CHECK_CALL:
+                check += showPot;
+                bet += showBet;
+            case CHECK_FOLD:
+                check += showPot;
+                bet += cuConsts.potSize;
+            case BET:
+                call += showBet;
+                fold -= cuConsts.potSize;
+            }
+        }
+        checkStrategy[i] = check > bet ? IP_CHECK : IP_BET;
+        betStrategy[i] = call > fold ? IP_CALL : IP_FOLD;
         check = 0;
         bet = 0;
         call = 0;
@@ -175,7 +213,7 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
     char *curStrategy = (char *) malloc(params->oopSize * sizeof(char));
     memset(curStrategy, 0, params->oopSize * sizeof(char));
 
-    int numThreads = 64 > params->ipSize ? params->ipSize : 64;
+    int numThreads = MAX_THREADS > params->ipSize ? params->ipSize : MAX_THREADS;
 
     int handsPerThread = params->ipSize / numThreads;
     char *minStrategy = (char *) malloc(params->oopSize * sizeof(char));
@@ -222,4 +260,46 @@ void calcMaxStrategy(char *bestStrat, int *stratVal, GlobalConstants *params) {
         }
     }
     *stratVal = minFound;
+}
+
+extern "C"
+void calcMaxIpStrategy(char *bestOopStrat, char *bestIpCheckStrat,
+        char *bestIpBetStrat,GlobalConstants *params) {
+    char *cudaOopStrat;
+    char *cudaIpCheckStrat;
+    char *cudaIpBetStrat;
+    if (cudaMalloc(&cudaOopStrat, params->oopSize * sizeof(char)) != cudaSuccess) {
+        printf("cuda malloc failed line 230\n");
+        assert(0);
+    }
+    if (cudaMemcpy(cudaOopStrat, bestOopStrat, params->oopSize * sizeof(char),
+                cudaMemcpyHostToDevice) != cudaSuccess) {
+        printf("cuda memcpy failed line 234");
+        assert(0);
+    }
+
+    if (cudaMalloc(&cudaIpCheckStrat, params->ipSize * sizeof(char)) != cudaSuccess) {
+        printf("cuda malloc failed line 239\n");
+        assert(0);
+    }
+    if (cudaMalloc(&cudaIpBetStrat, params->ipSize * sizeof(char)) != cudaSuccess) {
+        printf("cuda malloc failed line 239\n");
+        assert(0);
+    }
+
+    int numThreads = MAX_THREADS > params->ipSize ? params->ipSize : MAX_THREADS;
+
+    int handsPerThread = params->ipSize / numThreads;
+
+    kernel_calculateIpStrat<<<1, numThreads>>>
+        (handsPerThread, cudaOopStrat, cudaIpBetStrat, cudaIpCheckStrat);
+
+    if (cudaMemcpy(bestIpCheckStrat, cudaIpCheckStrat, params->ipSize * sizeof(char), cudaMemcpyDeviceToHost) != cudaSuccess) {
+        printf("cuda memcpy failed line 299\n");
+        assert(0);
+    }
+    if (cudaMemcpy(bestIpBetStrat, cudaIpBetStrat, params->ipSize * sizeof(char), cudaMemcpyDeviceToHost) != cudaSuccess) {
+        printf("cuda memcpy failed line 303\n");
+        assert(0);
+    }
 }
