@@ -45,6 +45,8 @@ extern "C" {
 
 #define QUAL_BITS (5 * RANK_SHIFT)
 
+#define CARD_STR_LEN 3
+
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
 typedef struct __attribute__((packed)) card {

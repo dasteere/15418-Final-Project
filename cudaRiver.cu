@@ -6,7 +6,9 @@
 
 
 extern "C" {
+#include "rank.h"
 #include "cudaRiver.h"
+#include "output_utils.h"
 }
 
 /*struct GlobalConstants {
