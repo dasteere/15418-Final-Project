@@ -65,16 +65,12 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         char **outputStrategy, char **tempStrategies, int *outputValue, int *pows) {
     int idx = threadIdx.x;
     int block = blockIdx.x;
-    int startStrategy = numStrategiesPerBlock * numBlocks;
-    // we will never have an oopSize of more than 100
+    int startStrategy = numStrategiesPerBlock * block;
+
     char *strategy = tempStrategies[block];
 
     setStrategy(strategy, startStrategy, pows);
-    for (int i = 0; i < cuConsts.oopSize; i++) {
-        if (strategy[i] > OOP_MOVES || strategy[i] < 0) {
-            printf("Strategy at %d is %d\n", i, strategy[i]);
-        }
-    }
+
     int maxStrategy = startStrategy + numStrategiesPerBlock;
     if (maxStrategy > totalStrategies) maxStrategy = totalStrategies;
 
@@ -126,7 +122,7 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
     outputValue[block] = curMax;
 
 }
-
+/*
 __global__ void kernel_calculateValue(int numThreads, int numBlocks,
         char **cudaOopStrategies, int *output) {
     int idx = threadIdx.x;
@@ -172,7 +168,7 @@ __global__ void kernel_calculateValue(int numThreads, int numBlocks,
         }
     }
 }
-
+*/
 __global__ void kernel_calculateIpStrat(int numThreads,
         char *strategy, char *betStrategy, char *checkStrategy) {
     int idx = threadIdx.x;
@@ -287,7 +283,7 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
     int numBlocks = MAX_BLOCKS < NUM_STRATEGIES_PER_ITERATION
         ? MAX_BLOCKS : NUM_STRATEGIES_PER_ITERATION;
     int strategiesPerBlock = totalStrategies / numBlocks;
-
+    printf("Num threads: %d, Num blocks: %d, StratPerBlock: %d\n", numThreads, numBlocks, strategiesPerBlock);
     char **oopStrategies =
         (char **) malloc(numBlocks * sizeof(char *));
     if (cudaMalloc(&cudaOopStrategies, numBlocks * sizeof(char *)) != cudaSuccess) {
