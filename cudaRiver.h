@@ -31,7 +31,7 @@ typedef struct GlobalConstants {
 #define ITERATIONS_TO_PRINT 100000
 #define NUM_STRATEGIES_PER_ITERATION 10000
 #define MAX_THREADS 64
-#define MAX_BLOCKS 64
+#define MAX_BLOCKS 480
 
 GlobalConstants *calcGlobalConsts(board_t board, hand_t *oopRange,
         int oopSize, hand_t *ipRange, int ipSize, int potSize, int betSize);

@@ -85,13 +85,6 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
     int curMin = INT_MAX;
     int ipRank, oopRank, oopMove, showdown, showPot, showBet;
     for (int m = startStrategy; m < maxStrategy; m++) {
-        int c = 1;
-        for (int i = 0; i < cuConsts.oopSize; i++) {
-            if (strategy[i] != CHECK_FOLD) {
-                c = 0;
-                break;
-            }
-        }
         for (int i = idx; i < cuConsts.ipSize; i += numThreads) {
             ipRank = cuConsts.ipRanks[i];
             for (int j = 0; j < cuConsts.oopSize; j++) {
@@ -100,23 +93,20 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
                 showdown = ipRank > oopRank ? 1 : -1;
                 showPot = ipRank > oopRank ? cuConsts.potSize : 0;
                 showBet = showPot + (showdown * cuConsts.betSize);
+
                 switch (oopMove) {
                 case CHECK_CALL:
                     check += showPot;
                     bet += showBet;
+                    break;
                 case CHECK_FOLD:
                     check += showPot;
                     bet += cuConsts.potSize;
+                    break;
                 case BET:
                     call += showBet;
+                    break;
                 }
-            }
-            if (call <= 0) {
-                printf("call = 0 idx: %d, block: %d: hand rank: %d\n", idx, block, ipRank);
-                assert(0);
-            } else if (bet < check) {
-                printf("bet < check idx: %d, block: %d: hand rank: %d\n", idx, block, ipRank);
-                assert(0);
             }
             atomicAdd(outputValue + block, max(check,bet) + max(call, fold));
 
@@ -126,9 +116,6 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         }
 
         __syncthreads();
-        if (c && outputValue[block] < curMin) {
-            printf("min val %d\n", outputValue[block]);
-        }
         if (outputValue[block] < curMin) {
             curMin = outputValue[block];
             for (int i = idx; i < cuConsts.oopSize; i+= numThreads) {
@@ -210,11 +197,14 @@ __global__ void kernel_calculateIpStrat(int numThreads,
             case CHECK_CALL:
                 check += showPot;
                 bet += showBet;
+                break;
             case CHECK_FOLD:
                 check += showPot;
                 bet += cuConsts.potSize;
+                break;
             case BET:
                 call += showBet;
+                break;
             }
         }
         checkStrategy[i] = check > bet ? IP_CHECK : IP_BET;
@@ -234,11 +224,11 @@ GlobalConstants *calcGlobalConsts(board_t board, hand_t *oopRange,
     int *ipRanks = (int *) malloc(ipSize * sizeof(int));
     for (int i = 0; i < oopSize; i++) {
         oopRanks[i] = rank_of(&board, &oopRange[i]);
-        printf("OopRank[%d]: %d\n", i, oopRanks[i]);
+        //printf("OopRank[%d]: %d\n", i, oopRanks[i]);
     }
     for (int i = 0; i < ipSize; i++) {
         ipRanks[i] = rank_of(&board, &ipRange[i]);
-        printf("IpRank[%d]: %d\n", i, ipRanks[i]);
+        //printf("IpRank[%d]: %d\n", i, ipRanks[i]);
     }
     if (cudaMalloc(&(params->oopRanks), sizeof(int) * oopSize) != cudaSuccess) {
         printf("Cuda malloc failed line 106\n");
@@ -366,23 +356,23 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
         printf("Cuda memcpy failed outputValues\n");
         assert(0);
     }
-    int maxIdx = 0;
-    int max = -1;
+    int minIdx = 0;
+    int min = INT_MAX;
     for (int i = 0; i < numBlocks; i++) {
-        if (outputValues[i] < max) {
-            max = outputValues[i];
-            maxIdx = i;
+        if (outputValues[i] < min) {
+            min = outputValues[i];
+            minIdx = i;
         }
     }
-    if (cudaMemcpy(bestStrat, oopStrategies[maxIdx], params->oopSize * sizeof(char),
+    if (cudaMemcpy(bestStrat, oopStrategies[minIdx], params->oopSize * sizeof(char),
                 cudaMemcpyDeviceToHost) != cudaSuccess) {
         printf("Cuda memcpy failed bestStrat\n");
         assert(0);
     }
-    for (int i = 0; i < params->oopSize; i++) {
+    /*for (int i = 0; i < params->oopSize; i++) {
         printf("%d ", bestStrat[i]);
     }
-    printf("\n");
+    printf("\n");*/
 }
 /*
 //calculates the best strategy for the oop player along with the strategies value
