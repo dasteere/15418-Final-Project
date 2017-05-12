@@ -274,7 +274,7 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
     }
 
     int numThreads = MAX_THREADS > params->ipSize ? params->ipSize : MAX_THREADS;
-    int numBlocks = MAX_BLOCKS > NUM_STRATEGIES_PER_ITERATION
+    int numBlocks = MAX_BLOCKS < NUM_STRATEGIES_PER_ITERATION
         ? MAX_BLOCKS : NUM_STRATEGIES_PER_ITERATION;
     int strategiesPerBlock = totalStrategies / numBlocks;
 
