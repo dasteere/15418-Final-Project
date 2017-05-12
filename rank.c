@@ -297,6 +297,8 @@ int rank_of(board_t *board, hand_t *hand) {
                 trips = (trips << RANK_SHIFT) | i;
             if (num_kickers < TWO_PAIR_KICKERS && two_pair >= 0)
                 two_pair = (two_pair << RANK_SHIFT) | i;
+            if (num_kickers < PAIR_KICKERS && pair >= 0)
+                pair = (pair << RANK_SHIFT) | i;
             if (num_kickers < HIGH_CARD_KICKERS)
                 high_card = (high_card << RANK_SHIFT) | i;
 

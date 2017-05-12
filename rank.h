@@ -34,10 +34,10 @@
 #define CARDS_TO_PAIR 2
 
 #define QUADS_KICKERS 1
-#define FLUSH_KICKERS 5
+#define FLUSH_KICKERS 4 
 #define TRIPS_KICKERS 2
 #define TWO_PAIR_KICKERS 1
-#define PAIR_KICKERS 1
+#define PAIR_KICKERS 3 
 #define HIGH_CARD_KICKERS 5
 
 #define QUAL_BITS (5 * RANK_SHIFT)
