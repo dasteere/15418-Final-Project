@@ -43,10 +43,12 @@ __device__ void setStrategy(char *strategy, int start, int *pows) {
     int toAdd = 0;
     while (start > 0 && i > 0) {
         toAdd = start / pows[i];
-        start -= toAdd;
+        //printf("ToAdd: %d, Start: %d, pows: %d, i: %d\n", toAdd, start, pows[i], i);
+        start -= toAdd * pows[i];
         strategy[i] = toAdd;
         i--;
     }
+    if (strategy[0] < 0 || strategy[0] >= OOP_MOVES) strategy[0] = 0;
     if (i < 0) assert(0);
 }
 
@@ -68,7 +70,11 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
     char strategy[16];
 
     setStrategy(strategy, startStrategy, pows);
-
+    for (int i = 0; i < cuConsts.oopSize; i++) {
+        if (strategy[i] > OOP_MOVES || strategy[i] < 0) {
+            printf("Strategy at %d is %d\n", i, strategy[i]);
+        }
+    }
     int maxStrategy = max(startStrategy + numStrategiesPerBlock, totalStrategies);
 
     int check = 0;
@@ -78,7 +84,6 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
     int curMax = 0;
     int ipRank, oopRank, oopMove, showdown, showPot, showBet;
     for (int m = startStrategy; m < maxStrategy; m++) {
-        if (startStrategy + m > totalStrategies) break;
         for (int i = idx; i < cuConsts.ipSize; i += numThreads) {
             ipRank = cuConsts.ipRanks[i];
             for (int j = 0; j < cuConsts.oopSize; j++) {
@@ -109,12 +114,17 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         if (outputValue[block] > curMax) {
             curMax = outputValue[block];
             for (int i = idx; i < cuConsts.oopSize; i+= numThreads) {
-                if (strategy[i] >= OOP_MOVES || strategy[i] < 0) assert(0);
+                if (strategy[i] >= OOP_MOVES || strategy[i] < 0) {
+                    printf("Value is %d\n", strategy[i]);
+                    assert(0);
+                }
                 outputStrategy[block][i] = strategy[i];
             }
+            //printf("Found max %d\n", curMax);
         }
         addOne(strategy);
     }
+    outputValue[block] = curMax;
 
 }
 
@@ -257,7 +267,7 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
     int pows[19];
     for (int i = 0; i < 19; i++) {
         if (i == 0) pows[i] = 1;
-        else pows[i] = pows[i-1] * params->oopSize;
+        else pows[i] = pows[i-1] * OOP_MOVES;
     }
     if (cudaMalloc(&cudaPows, 19 * sizeof(int)) != cudaSuccess) {
         printf("cuda malloc failed cudaPows\n");
@@ -292,6 +302,11 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
             printf("cuda malloc failed oopStrategies\n");
             assert(0);
         }
+        if (cudaMemset(oopStrategies[i], 0,
+                    params->oopSize * sizeof(char)) != cudaSuccess) {
+            printf("cuda memset failed oopStrategies\n");
+            assert(0);
+        }
     }
     if (cudaMemcpy(cudaOopStrategies, oopStrategies, numBlocks * sizeof(char*),
             cudaMemcpyHostToDevice) != cudaSuccess) {
@@ -321,16 +336,13 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
             max = outputValues[i];
             maxIdx = i;
         }
+        //if (outputValues[i] < 0) assert(0);
     }
     if (cudaMemcpy(bestStrat, oopStrategies[maxIdx], params->oopSize * sizeof(char),
                 cudaMemcpyDeviceToHost) != cudaSuccess) {
         printf("Cuda memcpy failed bestStrat\n");
         assert(0);
     }
-    for (int i = 0; i < params->oopSize; i++) {
-        printf("%d", bestStrat[i]);
-    }
-    printf("\n");
 }
 /*
 //calculates the best strategy for the oop player along with the strategies value
