@@ -164,7 +164,7 @@ void int_to_hand(int hand, char *buf) {
             break;
         case FLUSH:
             n += sprintf(buf + n, "Flush: ");
-            num_cards = 1;
+            num_cards = 5;
             break;
         case QUADS:
             n += sprintf(buf + n, "Quads: ");
@@ -286,11 +286,13 @@ int rank_of(board_t *board, hand_t *hand) {
 
     int num_kickers = 0;
     int high_card = 0;
-    /* Add kicker to two pair, quads, trips, high card */
+    /* Add kicker to two pair, flush, quads, trips, high card */
     for (int i = NUM_RANKS - 1; i >= 0; i--) {
         if (ranks[i] == 1) {
             if (num_kickers < QUADS_KICKERS && quads >= 0)
                 quads = (quads << RANK_SHIFT) | i;
+            if (num_kickers < FLUSH_KICKERS && flush >= 0)
+                flush = (flush << RANK_SHIFT) | i;
             if (num_kickers < TRIPS_KICKERS && trips >= 0)
                 trips = (trips << RANK_SHIFT) | i;
             if (num_kickers < TWO_PAIR_KICKERS && two_pair >= 0)

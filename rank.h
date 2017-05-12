@@ -34,6 +34,7 @@
 #define CARDS_TO_PAIR 2
 
 #define QUADS_KICKERS 1
+#define FLUSH_KICKERS 5
 #define TRIPS_KICKERS 2
 #define TWO_PAIR_KICKERS 1
 #define PAIR_KICKERS 1

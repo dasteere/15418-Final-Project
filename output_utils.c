@@ -171,6 +171,13 @@ void output_human_readable(hand_t *oopRange, char *oopStrat, int oopSize,
         printf(",\n");
     }
 
+    printf("\nCheck-fold hands:\n");
+    for (int i = 0; i < num_check_fold; i++) {
+        hand_t hand = check_fold[i];
+        print_hand(&hand);
+
+        printf(",\n");
+    }
 
     printf("\nBet hands:\n");
     for (int i = 0; i < num_bet; i++) {
@@ -247,7 +254,6 @@ void output_human_readable_enum(hand_t *oopRange, oop_action *oopStrat, int oopS
 
         printf(",\n");
     }
-
 
     printf("\nBet hands:\n");
     for (int i = 0; i < num_bet; i++) {
