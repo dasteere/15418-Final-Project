@@ -109,7 +109,7 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         if (outputValue[block] > curMax) {
             curMax = outputValue[block];
             for (int i = idx; i < cuConsts.oopSize; i+= numThreads) {
-                //outputStrategy[block][i] = strategy[i];
+                outputStrategy[block][i] = strategy[i];
             }
         }
         addOne(strategy);
@@ -298,7 +298,7 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
         assert(0);
     }
 
-    int outputValues[MAX_BLOCKS];
+    int *outputValues = (int *) malloc(numBlocks * sizeof(int));
     int *cudaOutputValues;
     if (cudaMalloc(&cudaOutputValues, numBlocks * sizeof(int)) != cudaSuccess) {
         printf("cuda malloc failed outputValues\n");
