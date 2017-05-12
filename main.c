@@ -57,12 +57,12 @@ int main() {
     char *bestIpBetStrategy = (char *) malloc(ipSize * sizeof(char));
 
     GlobalConstants *params = calcGlobalConsts(board, oopRange, oopSize, ipRange, ipSize, potSize, betSize);
-    calcMaxStrategy(bestOopStrategy, &stratVal, params);
+    calcMaxOopStrategy(bestOopStrategy, &stratVal, params);
     calcMaxIpStrategy(bestOopStrategy, bestIpCheckStrategy, bestIpBetStrategy, params);
 
     output_human_readable(oopRange, bestOopStrategy, oopSize,
             ipRange, bestIpCheckStrategy, bestIpBetStrategy, ipSize);
-#else 
+#else
     oop_action *oop_strat = (oop_action *)malloc(oopSize * sizeof(oop_action));
     assert(oop_strat);
     ip_action *ip_check_strat = (ip_action *)malloc(ipSize * sizeof(ip_action));
@@ -91,9 +91,9 @@ int main() {
 
     set_pot_size(potSize);
     set_bet_size(betSize);
-    best_oop_strat(&oop_ranks, &ip_ranks, oop_strat); 
+    best_oop_strat(&oop_ranks, &ip_ranks, oop_strat);
 
-    best_ip_strat(&oop_ranks, &ip_ranks, oop_strat, 
+    best_ip_strat(&oop_ranks, &ip_ranks, oop_strat,
             ip_check_strat, ip_bet_strat);
 
     output_human_readable_enum(oopRange, oop_strat, oopSize,
