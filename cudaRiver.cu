@@ -78,13 +78,14 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
     int bet = 0;
     int call = 0;
     int fold = 0;
-    int curMax = 0;
+    int curMin = 0;
     int ipRank, oopRank, oopMove, showdown, showPot, showBet;
     for (int m = startStrategy; m < maxStrategy; m++) {
         for (int i = idx; i < cuConsts.ipSize; i += numThreads) {
             ipRank = cuConsts.ipRanks[i];
             for (int j = 0; j < cuConsts.oopSize; j++) {
                 oopRank = cuConsts.oopRanks[j];
+                //if (oopRank < ipRank) printf("IIP better than OOP\n");
                 oopMove = strategy[j];
                 showdown = ipRank > oopRank ? 1 : -1;
                 showPot = ipRank > oopRank ? cuConsts.potSize : 0;
@@ -100,6 +101,11 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
                     call += showBet;
                 }
             }
+            if (call = 0) {
+                printf("call = 0 idx: %d, block: %d: hand rank: %d\n", idx, block, ipRank);
+            } else if (bet < check) {
+
+            }
             atomicAdd(outputValue + block, max(check,bet) + max(call, fold));
 
             check = 0;
@@ -108,8 +114,8 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         }
 
         __syncthreads();
-        if (outputValue[block] > curMax) {
-            curMax = outputValue[block];
+        if (outputValue[block] < curMin) {
+            curMin = outputValue[block];
             for (int i = idx; i < cuConsts.oopSize; i+= numThreads) {
                 if (strategy[i] >= OOP_MOVES || strategy[i] < 0) {
                     assert(0);
@@ -119,7 +125,7 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         }
         addOne(strategy);
     }
-    outputValue[block] = curMax;
+    outputValue[block] = curMin;
 
 }
 /*
@@ -214,9 +220,11 @@ GlobalConstants *calcGlobalConsts(board_t board, hand_t *oopRange,
     int *ipRanks = (int *) malloc(ipSize * sizeof(int));
     for (int i = 0; i < oopSize; i++) {
         oopRanks[i] = rank_of(&board, &oopRange[i]);
+        printf("OopRank[%d]: %d\n", i, oopRanks[i]);
     }
     for (int i = 0; i < ipSize; i++) {
         ipRanks[i] = rank_of(&board, &ipRange[i]);
+        printf("IpRank[%d]: %d\n", i, ipRanks[i]);
     }
     if (cudaMalloc(&(params->oopRanks), sizeof(int) * oopSize) != cudaSuccess) {
         printf("Cuda malloc failed line 106\n");
@@ -351,13 +359,16 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
             max = outputValues[i];
             maxIdx = i;
         }
-        //if (outputValues[i] < 0) assert(0);
     }
     if (cudaMemcpy(bestStrat, oopStrategies[maxIdx], params->oopSize * sizeof(char),
                 cudaMemcpyDeviceToHost) != cudaSuccess) {
         printf("Cuda memcpy failed bestStrat\n");
         assert(0);
     }
+    for (int i = 0; i < params->oopSize; i++) {
+        printf("%d ", bestStrat[i]);
+    }
+    printf("\n");
 }
 /*
 //calculates the best strategy for the oop player along with the strategies value
