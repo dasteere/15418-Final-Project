@@ -109,6 +109,7 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         if (outputValue[block] > curMax) {
             curMax = outputValue[block];
             for (int i = idx; i < cuConsts.oopSize; i+= numThreads) {
+                if (strategy[i] >= OOP_MOVES || strategy[i] < 0) assert(0);
                 outputStrategy[block][i] = strategy[i];
             }
         }
@@ -308,6 +309,7 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
     kernel_findBestOopStrat<<<numBlocks, numThreads>>>(numThreads, numBlocks,strategiesPerBlock, totalStrategies, cudaOopStrategies, cudaOutputValues, cudaPows);
 
     cudaDeviceSynchronize();
+
     if (cudaMemcpy(outputValues, cudaOutputValues, numBlocks * sizeof(int), cudaMemcpyDeviceToHost) != cudaSuccess) {
         printf("Cuda memcpy failed outputValues\n");
         assert(0);
@@ -325,6 +327,10 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
         printf("Cuda memcpy failed bestStrat\n");
         assert(0);
     }
+    for (int i = 0; i < params->oopSize; i++) {
+        printf("%d", bestStrat[i]);
+    }
+    printf("\n");
 }
 /*
 //calculates the best strategy for the oop player along with the strategies value
