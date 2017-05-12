@@ -62,12 +62,12 @@ __device__ void addOne(char *curStrategy) {
 //TODO: maybe use extern shared for the curStrategy and the max value
 __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         int numStrategiesPerBlock, int totalStrategies,
-        char **outputStrategy, int *outputValue, int *pows) {
+        char **outputStrategy, char **tempStrategies, int *outputValue, int *pows) {
     int idx = threadIdx.x;
     int block = blockIdx.x;
     int startStrategy = numStrategiesPerBlock * numBlocks;
     // we will never have an oopSize of more than 100
-    char strategy[16];
+    char *strategy = tempStrategies[block];
 
     setStrategy(strategy, startStrategy, pows);
     for (int i = 0; i < cuConsts.oopSize; i++) {
@@ -75,7 +75,8 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
             printf("Strategy at %d is %d\n", i, strategy[i]);
         }
     }
-    int maxStrategy = max(startStrategy + numStrategiesPerBlock, totalStrategies);
+    int maxStrategy = startStrategy + numStrategiesPerBlock;
+    if (maxStrategy > totalStrategies) maxStrategy = totalStrategies;
 
     int check = 0;
     int bet = 0;
@@ -115,12 +116,10 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
             curMax = outputValue[block];
             for (int i = idx; i < cuConsts.oopSize; i+= numThreads) {
                 if (strategy[i] >= OOP_MOVES || strategy[i] < 0) {
-                    printf("Value is %d\n", strategy[i]);
                     assert(0);
                 }
                 outputStrategy[block][i] = strategy[i];
             }
-            //printf("Found max %d\n", curMax);
         }
         addOne(strategy);
     }
@@ -295,7 +294,6 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
         printf("Cuda malloc failed cudaOopStrategies\n");
         assert(0);
     }
-
     for (int i = 0; i < numBlocks; i++) {
         if (cudaMalloc(&oopStrategies[i],
                     params->oopSize * sizeof(char)) != cudaSuccess) {
@@ -314,6 +312,27 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
         assert(0);
     }
 
+    char **tempStrategies =
+        (char **) malloc(numBlocks * sizeof(char *));
+    char **cudaTempStrategies;
+    if (cudaMalloc(&cudaTempStrategies, numBlocks * sizeof(char *)) != cudaSuccess) {
+        assert(0);
+    }
+    for (int i = 0; i < numBlocks; i++) {
+        if (cudaMalloc(&tempStrategies[i],
+                    params->oopSize * sizeof(char)) != cudaSuccess) {
+            assert(0);
+        }
+        if (cudaMemset(tempStrategies[i], 0,
+                    params->oopSize * sizeof(char)) != cudaSuccess) {
+            assert(0);
+        }
+    }
+    if (cudaMemcpy(cudaTempStrategies, tempStrategies, numBlocks * sizeof(char*),
+            cudaMemcpyHostToDevice) != cudaSuccess) {
+        assert(0);
+    }
+
     int *outputValues = (int *) malloc(numBlocks * sizeof(int));
     int *cudaOutputValues;
     if (cudaMalloc(&cudaOutputValues, numBlocks * sizeof(int)) != cudaSuccess) {
@@ -321,7 +340,7 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
         assert(0);
     }
 
-    kernel_findBestOopStrat<<<numBlocks, numThreads>>>(numThreads, numBlocks,strategiesPerBlock, totalStrategies, cudaOopStrategies, cudaOutputValues, cudaPows);
+    kernel_findBestOopStrat<<<numBlocks, numThreads>>>(numThreads, numBlocks,strategiesPerBlock, totalStrategies, cudaOopStrategies, cudaTempStrategies, cudaOutputValues, cudaPows);
 
     cudaDeviceSynchronize();
 
