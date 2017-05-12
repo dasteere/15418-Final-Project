@@ -65,6 +65,10 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         char **outputStrategy, char **tempStrategies, int *outputValue, int *pows) {
     int idx = threadIdx.x;
     int block = blockIdx.x;
+
+    outputValue[block] = 0;
+    __syncthreads();
+
     int startStrategy = numStrategiesPerBlock * block;
 
     char *strategy = tempStrategies[block];
@@ -81,12 +85,17 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
     int curMin = INT_MAX;
     int ipRank, oopRank, oopMove, showdown, showPot, showBet;
     for (int m = startStrategy; m < maxStrategy; m++) {
-
+        int c = 1;
+        for (int i = 0; i < cuConsts.oopSize; i++) {
+            if (strategy[i] != CHECK_FOLD) {
+                c = 0;
+                break;
+            }
+        }
         for (int i = idx; i < cuConsts.ipSize; i += numThreads) {
             ipRank = cuConsts.ipRanks[i];
             for (int j = 0; j < cuConsts.oopSize; j++) {
                 oopRank = cuConsts.oopRanks[j];
-                //if (oopRank < ipRank) printf("IIP better than OOP\n");
                 oopMove = strategy[j];
                 showdown = ipRank > oopRank ? 1 : -1;
                 showPot = ipRank > oopRank ? cuConsts.potSize : 0;
@@ -117,16 +126,17 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
         }
 
         __syncthreads();
+        if (c && outputValue[block] < curMin) {
+            printf("min val %d\n", outputValue[block]);
+        }
         if (outputValue[block] < curMin) {
             curMin = outputValue[block];
             for (int i = idx; i < cuConsts.oopSize; i+= numThreads) {
-                if (strategy[i] >= OOP_MOVES || strategy[i] < 0) {
-                    assert(0);
-                }
                 outputStrategy[block][i] = strategy[i];
             }
         }
         outputValue[block] = 0;
+        __syncthreads();
         addOne(strategy);
     }
     outputValue[block] = curMin;
@@ -359,7 +369,7 @@ void calcMaxOopStrategy(char *bestStrat, int *stratVal, GlobalConstants *params)
     int maxIdx = 0;
     int max = -1;
     for (int i = 0; i < numBlocks; i++) {
-        if (outputValues[i] > max) {
+        if (outputValues[i] < max) {
             max = outputValues[i];
             maxIdx = i;
         }
