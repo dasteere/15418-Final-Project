@@ -78,9 +78,10 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
     int bet = 0;
     int call = 0;
     int fold = 0;
-    int curMin = 0;
+    int curMin = INT_MAX;
     int ipRank, oopRank, oopMove, showdown, showPot, showBet;
     for (int m = startStrategy; m < maxStrategy; m++) {
+
         for (int i = idx; i < cuConsts.ipSize; i += numThreads) {
             ipRank = cuConsts.ipRanks[i];
             for (int j = 0; j < cuConsts.oopSize; j++) {
@@ -101,10 +102,12 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
                     call += showBet;
                 }
             }
-            if (call = 0) {
+            if (call <= 0) {
                 printf("call = 0 idx: %d, block: %d: hand rank: %d\n", idx, block, ipRank);
+                assert(0);
             } else if (bet < check) {
-
+                printf("bet < check idx: %d, block: %d: hand rank: %d\n", idx, block, ipRank);
+                assert(0);
             }
             atomicAdd(outputValue + block, max(check,bet) + max(call, fold));
 
@@ -123,6 +126,7 @@ __global__ void kernel_findBestOopStrat(int numThreads, int numBlocks,
                 outputStrategy[block][i] = strategy[i];
             }
         }
+        outputValue[block] = 0;
         addOne(strategy);
     }
     outputValue[block] = curMin;
