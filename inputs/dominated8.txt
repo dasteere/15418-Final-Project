@@ -1,0 +1,21 @@
+8 8 200 200
+2h,9s,As,5c,Ks,
+---OOP RANGE---
+Jd,9d,
+Jc,9c,
+Jh,9h,
+Jd,7c,
+Jd,7s,
+Jc,7d,
+Jc,7s,
+Jh,7d,
+---IP RANGE---
+Kd,8c,
+Kd,8h,
+Kd,8s,
+Kc,8h,
+Kc,8s,
+Kh,8d,
+Kh,8c,
+Kh,8s,
+
